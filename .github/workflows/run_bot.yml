@@ -2,7 +2,7 @@ name: Telegram Deal Bot
 
 on:
   schedule:
-    - cron: '0 */3 * * *' # Yeh bot ko har 3 ghante mein automatic chalayega
+    - cron: '15 * * * *' # Yeh bot ko har 3 ghante mein automatic chalayega
   workflow_dispatch: # Isse aap manually bhi GitHub par click kar ke run kar sakte hain
 
 jobs:
