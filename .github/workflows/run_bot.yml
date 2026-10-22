@@ -1,0 +1,28 @@
+name: Telegram Deal Bot
+
+on:
+  schedule:
+    - cron: '0 */3 * * *' # Yeh bot ko har 3 ghante mein automatic chalayega
+  workflow_dispatch: # Isse aap manually bhi GitHub par click kar ke run kar sakte hain
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install requests
+
+      - name: Run bot script
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: |
+          python bot.py
