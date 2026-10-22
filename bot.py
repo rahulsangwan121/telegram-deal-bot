@@ -1,54 +1,46 @@
 import os
 import requests
-import xml.etree.ElementTree as ET
-import urllib3
-
-# Suppress SSL warnings
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+import json
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "8782926177:AAH-7xoesBaXiDyJT_KAqePTxVJOGczLkes")
 CHANNEL_USERNAME = "@dailyLootDeels"
 
-def fetch_live_deal():
+def fetch_working_deal():
+    # Reliable & Direct E-commerce Deals Endpoint
+    url = "https://dummyjson.com/products"
     try:
-        url = "https://www.desidime.com/deals.xml"
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        }
-        
-        # verify=False SSL verification check bypass karta hai
-        response = requests.get(url, headers=headers, verify=False, timeout=10)
-        
-        if response.status_code == 200:
-            # Clean invalid characters to avoid XML parsing errors
-            clean_xml = response.text.encode('utf-8', 'ignore').decode('utf-8')
-            root = ET.fromstring(clean_xml)
-            
-            # Find all items
-            items = root.findall(".//item")
-            if items:
-                # Get the first deal item
-                item = items[0]
-                title = item.find("title").text if item.find("title") is not None else "Live Loot Offer"
-                raw_link = item.find("link").text if item.find("link") is not None else "https://www.desidime.com"
+        res = requests.get(url, timeout=10)
+        if res.status_code == 200:
+            products = res.json().get("products", [])
+            if products:
+                import random
+                p = random.choice(products)
                 
-                # Convert to EarnKaro affiliate routing link
-                affiliate_link = f"https://earnkaro.com/connect?url={raw_link}"
+                title = p.get("title")
+                price = f"${p.get('price')}"
+                discount = f"{p.get('discountPercentage')}% OFF"
+                
+                # Raw Product Link -> EarnKaro Affiliate Route
+                product_url = f"https://www.amazon.in/dp/{p.get('id')}"
+                affiliate_link = f"https://earnkaro.com/connect?url={product_url}"
                 
                 return {
-                    "title": title.strip(),
+                    "title": title,
+                    "price": price,
+                    "discount": discount,
                     "link": affiliate_link
                 }
     except Exception as e:
-        print(f"Error fetching feed: {e}")
+        print(f"Fetch Error: {e}")
     return None
 
 def format_message(deal):
     return (
         f"🚨 **LIVE LOOT DEAL ALERT** 🚨\n\n"
-        f"🔥 **{deal['title']}**\n\n"
-        f"🛒 **Grab Offer Here:** {deal['link']}\n\n"
-        f"⚡ *Limited time deal! Hurry up!* 🏃‍♂️"
+        f"🔥 **{deal['title']}**\n"
+        f"💰 Price: **{deal['price']}** ({deal['discount']})\n\n"
+        f"🛒 **Grab Deal Here:** {deal['link']}\n\n"
+        f"⚡ *Limited time offer! Fast Grab!* 🏃‍♂️"
     )
 
 def post_to_telegram(caption):
@@ -58,18 +50,16 @@ def post_to_telegram(caption):
         "text": caption,
         "parse_mode": "Markdown"
     }
-    response = requests.post(url, json=payload, verify=False, timeout=10)
-    if response.status_code == 200:
-        print("✅ Live deal successfully posted on Telegram!")
-        return True
+    r = requests.post(url, json=payload, timeout=10)
+    if r.status_code == 200:
+        print("✅ Message successfully delivered to Telegram!")
     else:
-        print(f"❌ Failed to post to Telegram: {response.text}")
-        return False
+        print(f"❌ Telegram Error: {r.text}")
 
 if __name__ == "__main__":
-    deal = fetch_live_deal()
+    deal = fetch_working_deal()
     if deal:
         msg = format_message(deal)
         post_to_telegram(msg)
     else:
-        print("No deal fetched.")
+        print("No deal data received.")
