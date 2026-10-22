@@ -5,7 +5,11 @@ import random
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "8782926177:AAH-7xoesBaXiDyJT_KAqePTxVJOGczLkes")
 CHANNEL_USERNAME = "@dailyLootDeels"
 
-def fetch_deal():
+def fetch_multi_platform_deal():
+    # Alag-alag e-commerce platforms ke mix products pool
+    platforms = ["Amazon", "Flipkart", "Myntra"]
+    chosen_platform = random.choice(platforms)
+    
     url = "https://dummyjson.com/products"
     try:
         res = requests.get(url, timeout=10)
@@ -13,13 +17,13 @@ def fetch_deal():
             products = res.json().get("products", [])
             if products:
                 p = random.choice(products)
-                title = p.get("title")
+                title = f"[{chosen_platform} Loot] {p.get('title')}"
                 price = f"${p.get('price')}"
                 discount = f"{p.get('discountPercentage')}% OFF"
-                image_url = p.get("thumbnail") # Product ki live image
+                image_url = p.get("thumbnail")
                 
                 # Raw Product Link -> EarnKaro Affiliate Route
-                product_url = f"https://www.amazon.in/dp/{p.get('id')}"
+                product_url = f"https://www.{chosen_platform.lower()}.in/dp/{p.get('id')}"
                 affiliate_link = f"https://earnkaro.com/connect?url={product_url}"
                 
                 return {
@@ -27,27 +31,26 @@ def fetch_deal():
                     "price": price,
                     "discount": discount,
                     "image": image_url,
-                    "link": affiliate_link
+                    "link": affiliate_link,
+                    "platform": chosen_platform
                 }
     except Exception as e:
-        print(f"Error fetching deal: {e}")
+        print(f"Error fetching multi-platform deal: {e}")
     return None
 
 def post_to_telegram(deal):
-    # sendPhoto API ka use karenge image aur button ke liye
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
     
     caption = (
-        f"🚨 **LIVE LOOT DEAL ALERT** 🚨\n\n"
+        f"🚨 **{deal['platform'].upper()} LOOT DEAL** 🚨\n\n"
         f"🔥 **{deal['title']}**\n"
         f"💰 Price: **{deal['price']}** ({deal['discount']})\n\n"
         f"⚡ *Limited time offer! Grab fast!* 🏃‍♂️"
     )
     
-    # Inline Clickable Button Markup
     reply_markup = {
         "inline_keyboard": [
-            [{"text": "🛒 Buy Now @ Best Price", "url": deal['link']}]
+            [{"text": f"🛒 Buy on {deal['platform']} @ Best Price", "url": deal['link']}]
         ]
     }
     
@@ -61,12 +64,12 @@ def post_to_telegram(deal):
     
     r = requests.post(url, json=payload, timeout=10)
     if r.status_code == 200:
-        print("✅ Photo deal with inline button successfully posted!")
+        print("✅ Multi-platform deal successfully posted!")
     else:
         print(f"❌ Telegram Error: {r.text}")
 
 if __name__ == "__main__":
-    deal = fetch_deal()
+    deal = fetch_multi_platform_deal()
     if deal:
         post_to_telegram(deal)
     else:
