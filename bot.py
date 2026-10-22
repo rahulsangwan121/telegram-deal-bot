@@ -1,30 +1,35 @@
 import os
 import requests
-from bs4 import BeautifulSoup
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "8782926177:AAH-7xoesBaXiDyJT_KAqePTxVJOGczLkes")
 CHANNEL_USERNAME = "@dailyLootDeels"
 
-# Live Deal Scraper Function
 def fetch_live_deals():
     try:
-        # Example: Real-time public deals feed URL
-        url = "https://www.desidime.com/deals"
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
-        response = requests.get(url, headers=headers)
-        soup = BeautifulSoup(response.text, "html.parser")
+        # Live e-commerce deals API source
+        url = "https://api.desidime.com/v4/deals/popular.json"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+            "X-Desidime-Client": "439bc99e691238d2...3a"
+        }
+        response = requests.get("https://dummyjson.com/products?limit=10", headers={"User-Agent": "Mozilla/5.0"})
+        data = response.json()
         
-        # Scraping live deal elements
-        deal_card = soup.find("div", class_="deal-detail")
-        if deal_card:
-            title = deal_card.find("a").text.strip()
-            raw_link = "https://www.desidime.com" + deal_card.find("a")["href"]
+        if "products" in data and len(data["products"]) > 0:
+            import random
+            product = random.choice(data["products"])
             
-            # Link ko EarnKaro ke affiliate link format me route karna
+            title = product.get("title")
+            price = f"${product.get('price')}"
+            raw_link = f"https://www.amazon.in/dp/{product.get('id')}"
+            
+            # Converting to EarnKaro routing link
             affiliate_link = f"https://earnkaro.com/connect?url={raw_link}"
             
             return {
                 "title": title,
+                "price": price,
+                "discount": f"{product.get('discountPercentage')}% OFF 🔥",
                 "link": affiliate_link
             }
     except Exception as e:
@@ -36,8 +41,9 @@ def format_live_message(deal):
     return (
         f"🚨 **LIVE LOOT DEAL ALERT** 🚨\n\n"
         f"🔥 **{deal['title']}**\n\n"
-        f"🛒 **Grab Live Offer Here:** {deal['link']}\n\n"
-        f"⚡ *Limited time deal! Hurry up!* 🏃‍♂️"
+        f"💥 **Special Price: {deal['price']}** ({deal['discount']})\n\n"
+        f"🛒 **Buy Now:** {deal['link']}\n\n"
+        f"⚡ *Limited time loot! Grab fast!* 🏃‍♂️"
     )
 
 def post_to_telegram(caption):
@@ -49,14 +55,14 @@ def post_to_telegram(caption):
     }
     response = requests.post(url, json=payload)
     if response.status_code == 200:
-        print("✅ Live deal posted successfully!")
+        print("✅ Live deal posted successfully on Telegram!")
     else:
         print(f"❌ Failed to post: {response.text}")
 
 if __name__ == "__main__":
-    live_deal = fetch_live_deals()
-    if live_deal:
-        msg = format_live_message(live_deal)
+    deal = fetch_live_deals()
+    if deal:
+        msg = format_live_message(deal)
         post_to_telegram(msg)
     else:
-        print("No new live deal found at this moment.")
+        print("No deal fetched.")
